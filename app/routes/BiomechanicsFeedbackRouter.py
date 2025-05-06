@@ -3,6 +3,7 @@ from ..handlers.Logger import logger
 from ..models.RequestModel import RequestModel
 from ..controllers.BiomechanicsFeedback import biomechanics_feedback_controller
 
+
 router = APIRouter(prefix="/feedback", tags=["BiomechanicsFeedback"])
 
 @router.post("/", response_model=dict)

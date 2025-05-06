@@ -1,4 +1,7 @@
 from ..models.RequestModel import RequestModel
+from ..models import RequestModel
+# from ..services import BiomechanicsFeedbackService
+
 
 async def biomechanics_feedback_controller(request: RequestModel):
     """
@@ -15,3 +18,11 @@ async def biomechanics_feedback_controller(request: RequestModel):
         "excel_file_compare": cmp_name,
         "joint_id": request.joint_id
     }
+    
+# Este es el de prueba 
+# async def biomechanics_feedback_controller(request: RequestModel):
+#     return await BiomechanicsFeedbackService.compare(
+#         base_file=request.base_excel_file,
+#         compare_file=request.excel_file_compare,
+#         joint_id=request.joint_id
+#     )
