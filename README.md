@@ -6,7 +6,7 @@ This monolith focuses on the analysis and comparison of biomechanical data, such
 
 - Python 3.8 or superior
 - Git
-- pip (gestor de paquetes de Python)
+- pip (Python package manager)
 
 ## Configuration
 
