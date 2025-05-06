@@ -5,11 +5,12 @@ from fastapi.exceptions import RequestValidationError
 from ..handlers.Logger import logger
 
 
-
 class RequestModel(BaseModel):
+    
     base_excel_file: UploadFile
     excel_file_compare: UploadFile
     joint_id: int
+    
 
     @model_validator(mode="before")
     def check_all_present(cls, values:dict):
@@ -17,6 +18,7 @@ class RequestModel(BaseModel):
         if missing:
             raise ValueError(f"Missing required fields: {', '.join(missing)}")
         return values
+
 
     @field_validator("base_excel_file", "excel_file_compare")
     def check_file_type(cls, file: UploadFile):
@@ -40,6 +42,7 @@ class RequestModel(BaseModel):
             raise ValueError("Joint ID must be a positive integer")
         return joint_id
     
+    
     @classmethod
     def validate(cls, 
                 base_excel_file: UploadFile = File(..., description="Reference user excel file"), 
@@ -62,5 +65,3 @@ class RequestModel(BaseModel):
                 cleaned.append(err)
             # reenviamos como RequestValidationError para que lo capte tu handler
             raise RequestValidationError(cleaned)
-
-
