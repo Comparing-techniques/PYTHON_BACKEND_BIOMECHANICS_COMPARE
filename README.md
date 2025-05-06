@@ -21,14 +21,14 @@ This monolith focuses on the analysis and comparison of biomechanical data, such
 
 In macOS or Linux:
 ```bash
-- python3 -m venv .pythonapi
-- source .pythonapi/bin/activate
+- python3 -m venv pythonapi
+- source pythonapi/bin/activate
 ```
 
 In Windows (CMD):
 ```bash
-- python -m venv .pythonapi
-- .pythonapi\Scripts\activate
+- python -m venv pythonapi
+- pythonapi\Scripts\activate
 ```
 
 3. Install the Dependencies
