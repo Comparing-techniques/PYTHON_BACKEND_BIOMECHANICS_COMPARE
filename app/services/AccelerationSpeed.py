@@ -1,0 +1,220 @@
+import numpy as np
+import pandas as pd
+
+
+def compute_kinematics(user_data):
+    """
+    Given user_data with 'info': {'ms': [...]}
+    and 'data': {art: {'x', 'y', 'z'} arrays}, compute per-frame:
+      - velocity components vx, vy, vz
+      - acceleration components ax, ay, az
+      - jerk (derivative of acceleration) components jx, jy, jz
+      - velocity magnitude, acceleration magnitude, jerk magnitude
+      - sign of velocity per axis
+
+    Returns:
+      kinematics: dict of articulations to dict with keys:
+        'ms': array of times for valid frames
+        'vel', 'acc', 'jerk': arrays of magnitudes
+        'signs': dict of 'vx', 'vy', 'vz' sign arrays
+    """
+    ms = np.array(user_data['info']['ms'], dtype=float)
+    dt = np.diff(ms) / 1000.0  # seconds
+    kinematics = {}
+
+    for art, d in user_data['data'].items():
+        # positions
+        x, y, z = d['x'], d['y'], d['z']
+        # compute velocity components (length n-1)
+        vx = np.diff(x) / dt
+        vy = np.diff(y) / dt
+        vz = np.diff(z) / dt
+        # acceleration components (length n-2)
+        ax = np.diff(vx) / dt[:-1]
+        ay = np.diff(vy) / dt[:-1]
+        az = np.diff(vz) / dt[:-1]
+        # jerk components (length n-3)
+        jx = np.diff(ax) / dt[:-2]
+        jy = np.diff(ay) / dt[:-2]
+        jz = np.diff(az) / dt[:-2]
+
+        # magnitudes
+        vel_mag = np.sqrt(vx**2 + vy**2 + vz**2)
+        acc_mag = np.sqrt(ax**2 + ay**2 + az**2)
+        jerk_mag = np.sqrt(jx**2 + jy**2 + jz**2)
+
+        # signs of velocity per axis (for change count), pad to length of jerk for window alignment later
+        sign_vx = np.sign(vx)
+        sign_vy = np.sign(vy)
+        sign_vz = np.sign(vz)
+
+        kinematics[art] = {
+            'ms_vel': ms[1:],       # times aligned with vx
+            'ms_acc': ms[2:],       # times aligned with ax
+            'ms_jerk': ms[3:],      # times aligned with jx
+            'vel_mag': vel_mag,
+            'acc_mag': acc_mag,
+            'jerk_mag': jerk_mag,
+            'sign_vx': sign_vx,
+            'sign_vy': sign_vy,
+            'sign_vz': sign_vz
+        }
+    return kinematics
+
+
+def sliding_window_indices(ms_array, window_ms=10):
+    """
+    Generate a list of (start_idx, end_idx) for sliding non-overlapping windows of window_ms
+    based on timestamps ms_array.
+    ms_array: increasing array of times in ms.
+    window_ms: width of each window in ms.
+    """
+    indices = []
+    start_idx = 0
+    n = len(ms_array)
+    while start_idx < n:
+        t0 = ms_array[start_idx]
+        # find end index where time < t0 + window_ms
+        end_idx = np.searchsorted(ms_array, t0 + window_ms, side='right')
+        if end_idx <= start_idx:
+            break
+        indices.append((start_idx, end_idx))
+        start_idx = end_idx
+    return indices
+
+
+def compute_window_metrics(kin_ref, kin_cmp, window_ms=10):
+    """
+    Compare kinematics of reference and comparison user for each articulation.
+    Returns dict of articulation -> DataFrame with columns:
+      inicio_ms, fin_ms, n_frames,
+      vel_media, acel_media, cambios_direccion, jerk_medio, jerk_std,
+      vel_media_diff_pct, acel_media_diff_pct, jerk_medio_diff_pct, cambios_direccion_diff
+    """
+    results = {}
+    for art, ref in kin_ref.items():
+        if art not in kin_cmp:
+            continue
+        cmp = kin_cmp[art]
+        # use vel timestamps for ms reference
+        ms = ref['ms_vel']
+        # get windows
+        windows = sliding_window_indices(ms, window_ms)
+        rows = []
+        for (i0, i1) in windows:
+            # velocity window for ref and cmp
+            v_ref = ref['vel_mag'][i0:i1]
+            v_cmp = cmp['vel_mag'][i0:i1]
+            # acceleration windows aligned: acc starts one frame later
+            # shift indices by -1 for acc arrays
+            a_ref = ref['acc_mag'][max(i0-1,0):i1-1]
+            a_cmp = cmp['acc_mag'][max(i0-1,0):i1-1]
+            # jerk windows, shift by -2
+            j_ref = ref['jerk_mag'][max(i0-2,0):i1-2]
+            j_cmp = cmp['jerk_mag'][max(i0-2,0):i1-2]
+
+            # compute metrics
+            vel_mean_ref = np.mean(v_ref)
+            vel_mean_cmp = np.mean(v_cmp)
+            acc_mean_ref = np.mean(a_ref) if len(a_ref)>0 else np.nan
+            acc_mean_cmp = np.mean(a_cmp) if len(a_cmp)>0 else np.nan
+            jerk_mean_ref = np.mean(j_ref) if len(j_ref)>0 else np.nan
+            jerk_mean_cmp = np.mean(j_cmp) if len(j_cmp)>0 else np.nan
+            jerk_std_cmp = np.std(j_cmp) if len(j_cmp)>0 else np.nan
+
+            # cambios de direccion: count sign changes in velocity per axis
+            def count_sign_changes(sign_arr):
+                return int(np.sum(sign_arr[:-1] * sign_arr[1:] < 0))
+            cd_ref = count_sign_changes(ref['sign_vx'][i0:i1]) + \
+                     count_sign_changes(ref['sign_vy'][i0:i1]) + \
+                     count_sign_changes(ref['sign_vz'][i0:i1])
+            cd_cmp = count_sign_changes(cmp['sign_vx'][i0:i1]) + \
+                     count_sign_changes(cmp['sign_vy'][i0:i1]) + \
+                     count_sign_changes(cmp['sign_vz'][i0:i1])
+
+            # percent differences
+            eps = 1e-8
+            vel_diff_pct = 100 * (vel_mean_cmp - vel_mean_ref) / (vel_mean_ref + eps)
+            acc_diff_pct = 100 * (acc_mean_cmp - acc_mean_ref) / (acc_mean_ref + eps)
+            jerk_diff_pct = 100 * (jerk_mean_cmp - jerk_mean_ref) / (jerk_mean_ref + eps)
+            cd_diff = cd_cmp - cd_ref
+
+            rows.append({
+                'inicio_ms': ms[i0],
+                'fin_ms': ms[i1-1],
+                'n_frames': i1 - i0,
+                'vel_media': vel_mean_cmp,
+                'acel_media': acc_mean_cmp,
+                'cambios_direccion': cd_cmp,
+                'jerk_medio': jerk_mean_cmp,
+                'jerk_std': jerk_std_cmp,
+                'vel_media_diff_pct': vel_diff_pct,
+                'acel_media_diff_pct': acc_diff_pct,
+                'jerk_medio_diff_pct': jerk_diff_pct,
+                'cambios_direccion_diff': cd_diff
+            })
+        results[art] = pd.DataFrame(rows)
+    return results
+
+
+def pipeline_compare_users(user_ref, user_cmp, window_ms=10):
+    """
+    Full pipeline: compute kinematics for both users, then windowed comparison metrics.
+    Returns dict of DataFrames per articulation.
+    """
+    kin_ref = compute_kinematics(user_ref)
+    kin_cmp = compute_kinematics(user_cmp)
+    return compute_window_metrics(kin_ref, kin_cmp, window_ms)
+
+
+
+def generate_window_feedback(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Añade una columna 'feedback' al DataFrame con mensajes en palabras para cada ventana.
+    Cada mensaje indica el número de frames, tiempo de inicio y fin, y describe:
+      - si la velocidad media fue mayor o menor que el modelo
+      - si la aceleración media fue mayor o menor que el modelo
+      - si el jerk medio indica movimiento brusco
+      - si hubo más cambios de dirección que el modelo
+    """
+    feedbacks = []
+    for _, row in df.iterrows():
+        inicio = row['inicio_ms']
+        fin = row['fin_ms']
+        n = int(row['n_frames'])
+        # velocidad
+        v_diff = row['vel_media_diff_pct']
+        if v_diff > 5:
+            v_msg = f"Velocidad media un {v_diff:.1f}% mayor que el modelo"
+        elif v_diff < -5:
+            v_msg = f"Velocidad media un {abs(v_diff):.1f}% menor que el modelo"
+        else:
+            v_msg = "Velocidad media similar al modelo"
+        # aceleración
+        a_diff = row['acel_media_diff_pct']
+        if a_diff > 10:
+            a_msg = f"Aceleración media un {a_diff:.1f}% mayor que el modelo"
+        elif a_diff < -10:
+            a_msg = f"Aceleración media un {abs(a_diff):.1f}% menor que el modelo"
+        else:
+            a_msg = "Aceleración media dentro de rango aceptable"
+        # jerk
+        j_diff = row['jerk_medio_diff_pct']
+        if j_diff > 10:
+            j_msg = "Movimiento brusco (jerk alto) respecto al modelo"
+        else:
+            j_msg = "Movimiento relativamente suave"
+        # cambios de dirección
+        c_diff = row['cambios_direccion_diff']
+        if c_diff > 0:
+            c_msg = f"{c_diff} cambios de dirección más que el modelo"
+        elif c_diff < 0:
+            c_msg = f"{abs(c_diff)} cambios de dirección menos que el modelo"
+        else:
+            c_msg = "Igual número de cambios de dirección que el modelo"
+        # unir en un solo párrafo
+        msg = (f"Ventana {inicio:.2f}–{fin:.2f} ms ({n} frames): " + "; ".join([v_msg, a_msg, j_msg, c_msg]) + ".")
+        feedbacks.append(msg)
+    df_with_feedback = df.copy()
+    df_with_feedback['feedback'] = feedbacks
+    return df_with_feedback
