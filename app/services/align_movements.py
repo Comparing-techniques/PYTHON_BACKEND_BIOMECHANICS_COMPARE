@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def seleccionar_articulacion_dict(user_dict, opcion: int):
     joint_names = list(user_dict["data"].keys())
 

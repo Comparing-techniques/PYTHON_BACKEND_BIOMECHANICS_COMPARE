@@ -1,8 +1,8 @@
+"""
+Genera mensaje de retroalimentación basado en errores y umbrales.
+"""
 
 def build_feedback(joint_errors: dict, clusters: dict, thresholds: dict):
-    """
-    Genera mensaje de retroalimentación basado en errores y umbrales.
-    """
     feedback = {}
     for joint, errors in joint_errors.items():
         rmse = errors.get('rmse')

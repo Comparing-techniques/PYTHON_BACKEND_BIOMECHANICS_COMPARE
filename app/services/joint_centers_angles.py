@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 
+
 def promedio_posicion(marker1, marker2, data_dict, step=1):
     """
     Calcula el promedio de posición (x, y, z) entre dos marcadores usando solo NumPy arrays.
@@ -31,6 +32,7 @@ def promedio_posicion(marker1, marker2, data_dict, step=1):
         "y": np.array(y_avg),
         "z": np.array(z_avg),
     }
+
 
 def replace_zero_norm_quat(q, tol=1e-10):
     """
@@ -136,6 +138,7 @@ def calcular_orientacion_segmento(markers, data_dict, step=1):
     else:
         raise ValueError("La lista de marcadores debe tener 1 o 2 elementos.")
 
+
 def calcular_cinematic_rel(seg_sup_dict, seg_inf_dict=None, user_dict=None, step=1, order="inferior_to_superior"):
     """
     Calcula la cinemática relativa entre dos segmentos (orientación relativa).
@@ -180,6 +183,64 @@ def calcular_cinematic_rel(seg_sup_dict, seg_inf_dict=None, user_dict=None, step
         raise ValueError("El parámetro 'order' debe ser 'inferior_to_superior' o 'superior_to_inferior'.")
 
     return R_rel.as_quat()
+
+
+def convertir_a_dict_articulaciones(user_dict, joints_calculations, step=1):
+    articulaciones_data = {}
+    tiempos_globales = None
+
+    for articulacion, info in joints_calculations.items():
+        centro = info.get("centro", None)
+        if centro is None or not isinstance(centro, dict):
+            print(f"[DEBUG] Centro no válido para {articulacion}")
+            continue
+
+        segmentos = info.get("segmentos", {})
+        if "s_superior" in segmentos and "s_inferior" in segmentos:
+            sup_seg = segmentos["s_superior"]
+            inf_seg = segmentos["s_inferior"]
+            resultado_array = calcular_cinematic_rel(sup_seg, inf_seg, user_dict=user_dict, step=step)
+        elif "s_unico" in segmentos:
+            resultado_array = calcular_cinematic_rel(segmentos["s_unico"], user_dict=user_dict, step=step)
+        else:
+            print(f"[DEBUG] Segmentos no encontrados para {articulacion}")
+            continue
+
+        # Separar los cuaterniones en diccionario
+        rot_keys = ['xrot', 'yrot', 'zrot', 'wrot']
+        resultado = {}
+        if resultado_array.ndim == 2 and resultado_array.shape[1] == 4:
+            for i, key in enumerate(rot_keys):
+                resultado[key] = resultado_array[:, i]
+        else:
+            print(f"[DEBUG] Resultado inesperado para {articulacion}: shape={resultado_array.shape}")
+            for key in rot_keys:
+                resultado[key] = np.full(len(centro['x'][::step]), np.nan)
+
+        # Creamos el subdiccionario para esta articulación
+        articulaciones_data[articulacion] = {}
+
+        n = len(centro['x'][::step])  # número de frames después del submuestreo
+
+        # Agregamos posiciones del centro
+        for k in ['x', 'y', 'z']:
+            articulaciones_data[articulacion][k] = np.array(centro[k])[::step] if k in centro else np.full(n, np.nan)
+
+        # Agregamos rotaciones del resultado
+        for k in rot_keys:
+            articulaciones_data[articulacion][k] = resultado.get(k, np.full(n, np.nan))
+
+        # Guardamos los tiempos una sola vez
+        if tiempos_globales is None:
+            tiempos_globales = {
+                "frames": user_dict['info']['frames'][::step][:n],
+                "ms": user_dict['info']['ms'][::step][:n]
+            }
+    return {
+        "data": articulaciones_data,
+        "info": tiempos_globales if tiempos_globales else {"frames": np.array([]), "ms": np.array([])}
+    }
+
 
 def create_dict_with_data(user_dict):
     joints_calculations_mod = {
@@ -372,59 +433,3 @@ def create_dict_with_data(user_dict):
         }
     }
     return joints_calculations_mod
-
-def convertir_a_dict_articulaciones(user_dict, joints_calculations, step=1):
-    articulaciones_data = {}
-    tiempos_globales = None
-
-    for articulacion, info in joints_calculations.items():
-        centro = info.get("centro", None)
-        if centro is None or not isinstance(centro, dict):
-            print(f"[DEBUG] Centro no válido para {articulacion}")
-            continue
-
-        segmentos = info.get("segmentos", {})
-        if "s_superior" in segmentos and "s_inferior" in segmentos:
-            sup_seg = segmentos["s_superior"]
-            inf_seg = segmentos["s_inferior"]
-            resultado_array = calcular_cinematic_rel(sup_seg, inf_seg, user_dict=user_dict, step=step)
-        elif "s_unico" in segmentos:
-            resultado_array = calcular_cinematic_rel(segmentos["s_unico"], user_dict=user_dict, step=step)
-        else:
-            print(f"[DEBUG] Segmentos no encontrados para {articulacion}")
-            continue
-
-        # Separar los cuaterniones en diccionario
-        rot_keys = ['xrot', 'yrot', 'zrot', 'wrot']
-        resultado = {}
-        if resultado_array.ndim == 2 and resultado_array.shape[1] == 4:
-            for i, key in enumerate(rot_keys):
-                resultado[key] = resultado_array[:, i]
-        else:
-            print(f"[DEBUG] Resultado inesperado para {articulacion}: shape={resultado_array.shape}")
-            for key in rot_keys:
-                resultado[key] = np.full(len(centro['x'][::step]), np.nan)
-
-        # Creamos el subdiccionario para esta articulación
-        articulaciones_data[articulacion] = {}
-
-        n = len(centro['x'][::step])  # número de frames después del submuestreo
-
-        # Agregamos posiciones del centro
-        for k in ['x', 'y', 'z']:
-            articulaciones_data[articulacion][k] = np.array(centro[k])[::step] if k in centro else np.full(n, np.nan)
-
-        # Agregamos rotaciones del resultado
-        for k in rot_keys:
-            articulaciones_data[articulacion][k] = resultado.get(k, np.full(n, np.nan))
-
-        # Guardamos los tiempos una sola vez
-        if tiempos_globales is None:
-            tiempos_globales = {
-                "frames": user_dict['info']['frames'][::step][:n],
-                "ms": user_dict['info']['ms'][::step][:n]
-            }
-    return {
-        "data": articulaciones_data,
-        "info": tiempos_globales if tiempos_globales else {"frames": np.array([]), "ms": np.array([])}
-    }
