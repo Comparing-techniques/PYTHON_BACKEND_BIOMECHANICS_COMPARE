@@ -2,7 +2,7 @@ from fastapi import UploadFile, File, Form, HTTPException
 
 from pydantic import BaseModel, field_validator, ValidationError, model_validator
 from fastapi.exceptions import RequestValidationError
-from ..handlers.Logger import logger
+from ..handlers.logger import logger
 
 
 class RequestModel(BaseModel):
