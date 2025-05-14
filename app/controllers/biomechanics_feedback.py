@@ -1,10 +1,10 @@
-from app.services.BiomechanicalFeedbackService import execute_comparison
-from ..models.RequestModel import RequestModel
-from ..models import RequestModel
+from app.services.biomechanical_feedback_service import execute_comparison
+from ..models.request_model import RequestModel
+from ..models import request_model
 # from ..services import BiomechanicsFeedbackService
 
 
-async def biomechanics_feedback_controller(request: RequestModel):
+async def biomechanics_feedback_controller(request: request_model):
     """
     Controller function to handle the biomechanics feedback request.
     """
