@@ -1,15 +1,25 @@
-from fastapi import UploadFile
 import numpy as np
 import pandas as pd
+
 from collections import Counter
-
 from fastapi import UploadFile
-import pandas as pd
+from ..handlers.logger import logger
 from io import BytesIO
-
-from fastapi import UploadFile
-import pandas as pd
-from io import BytesIO
+from ..utils.errors_processing_files import (
+    ADD_DATA_TO_DICT_UNEXPECTED_ERROR,
+    ADD_DATA_TO_DICT_VALUE_ERROR,
+    ERROR_IN_ROTATION,
+    FILE_NOT_FOUND_ERROR,
+    TIME_LIST_NOT_EMPTY,
+    VALUE_ERROR_MSG,
+    UNEXPECTED_ERROR_MSG,
+    EXTRACT_NUMERIC_LIST_VALUE_WARNING,
+    EXTRACT_NUMERIC_LIST_ERROR,
+    EXTRACT_NUMERIC_LIST_UNEXPECTED,
+    CREATE_TUPLE_NAMES_VALUE_ERROR,
+    CREATE_TUPLE_NAMES_INDEX_ERROR,
+    CREATE_TUPLE_NAMES_UNEXPECTED_ERROR,
+)
 
 
 async def load_excel_file(file: UploadFile) -> pd.DataFrame:
@@ -24,17 +34,16 @@ async def load_excel_file(file: UploadFile) -> pd.DataFrame:
     - None: Si ocurre un error.
     """
     try:
-        # Leer contenido y envolverlo en BytesIO
         content = await file.read()
         df = pd.read_excel(BytesIO(content), header=None)
-        print(f"Archivo cargado correctamente: {file.filename}")
+        logger.info(f"Archivo cargado correctamente: {file.filename}")
         return df
     except FileNotFoundError:
-        print(f"Error: El archivo '{file.filename}' no fue encontrado. (load_excel_file)")
+        logger.error(FILE_NOT_FOUND_ERROR.format(filename=file.filename))
     except ValueError as ve:
-        print(f"Error de valor: {ve} (load_excel_file)")
+        logger.error(VALUE_ERROR_MSG.format(error=str(ve)))
     except Exception as e:
-        print(f"Error inesperado: {e} (load_excel_file)")
+        logger.error(UNEXPECTED_ERROR_MSG.format(error=str(e)))
     return None
 
 
@@ -72,14 +81,14 @@ def extract_numeric_list(df: pd.DataFrame) -> list[float]:
 
                 time_list.append(num)  # Agregar a la lista
             except ValueError:
-                print(f"Advertencia: '{item}' no es un número válido y se omitirá.")
+                logger.warning(EXTRACT_NUMERIC_LIST_VALUE_WARNING.format(item=item))
 
         return time_list
 
     except ValueError as ve:
-        print(f"Error (extract_numeric_list): {ve}")
+        logger.error(EXTRACT_NUMERIC_LIST_ERROR.format(error=str(ve)))
     except Exception as e:
-        print(f"Error inesperado (extract_numeric_list): {e}")
+        logger.error(EXTRACT_NUMERIC_LIST_UNEXPECTED.format(error=str(e)))
     return []
 
 
@@ -103,11 +112,11 @@ def create_tuple_names_list(df:pd.DataFrame) -> list[tuple]:
         return list(Counter(data_list).items())
 
     except ValueError as ve:
-        print(f"Error de valor (create_tuple_names_list): {ve}")
+        logger.error(CREATE_TUPLE_NAMES_VALUE_ERROR.format(error=str(ve)))
     except IndexError as ie:
-        print(f"Error de índice (create_tuple_names_list): {ie}")
+        logger.error(CREATE_TUPLE_NAMES_INDEX_ERROR.format(error=str(ie)))
     except Exception as e:
-        print(f"Error inesperado (create_tuple_names_list): {e}")
+        logger.error(CREATE_TUPLE_NAMES_UNEXPECTED_ERROR.format(error=str(e)))
     return []
 
 
@@ -129,7 +138,7 @@ def creating_marker_dict(df: pd.DataFrame, list_tuples) -> dict:
         # Extraer lista de milisegundos
         time_list = extract_numeric_list(df.copy())
         if not time_list:
-            raise ValueError("La lista de tiempos está vacía.")
+            raise ValueError(TIME_LIST_NOT_EMPTY)
         
         num_frames = len(time_list)
         frame_numbers = list(range(1, num_frames + 1))
@@ -158,7 +167,7 @@ def creating_marker_dict(df: pd.DataFrame, list_tuples) -> dict:
         return output
 
     except Exception as e:
-        print(f"❌ Error: {e}")
+        logger.error(UNEXPECTED_ERROR_MSG.format(error=str(e)))
         return {}
 
 def add_data_to_dict(df: pd.DataFrame, data_dict: dict, list_tuples: list, start_row: int) -> dict:
@@ -179,7 +188,7 @@ def add_data_to_dict(df: pd.DataFrame, data_dict: dict, list_tuples: list, start
         row_index = df[df.iloc[:, 2].astype(str).str.contains('Rotation|Position', na=False)].index
 
         if row_index.empty:
-            raise ValueError("No se encontró la celda 'Rotation | Position' en la tercera columna.")
+            raise ValueError(ERROR_IN_ROTATION)
         contador = "inicio"
         # Índices de filas clave
         name_marker_row = row_index[0] - 2
@@ -213,10 +222,9 @@ def add_data_to_dict(df: pd.DataFrame, data_dict: dict, list_tuples: list, start
         return data_dict
 
     except ValueError as ve:
-        print(f"❌ Error de valor: {ve}")
+        logger.error(ADD_DATA_TO_DICT_VALUE_ERROR.format(error=str(ve)))
     except Exception as e:
-        print(contador)
-        print(f"⚠️ Error inesperado (add_data_to_dict): {e}")
+        logger.error(f"{contador} - " + ADD_DATA_TO_DICT_UNEXPECTED_ERROR.format(error=str(e)))
 
     return data_dict  # Devuelve el diccionario sin cambios en caso de error
 
@@ -239,7 +247,7 @@ def add_data_to_dict(df: pd.DataFrame, data_dict: dict, list_tuples: list, start
         row_index = df[df.iloc[:, 2].astype(str).str.contains('Rotation|Position', na=False)].index
 
         if row_index.empty:
-            raise ValueError("No se encontró la celda 'Rotation | Position' en la tercera columna.")
+            raise ValueError(ERROR_IN_ROTATION)
         contador = "inicio"
         # Índices de filas clave
         name_marker_row = row_index[0] - 2
@@ -273,8 +281,8 @@ def add_data_to_dict(df: pd.DataFrame, data_dict: dict, list_tuples: list, start
         return data_dict
 
     except ValueError as ve:
-        print(f"❌ Error de valor: {ve}")
-    except Exception as e:  
-        print(f"⚠️ Error inesperado (add_data_to_dict): {e}")
+        logger.error(ADD_DATA_TO_DICT_VALUE_ERROR.format(error=str(ve)))
+    except Exception as e:
+        logger.error(ADD_DATA_TO_DICT_UNEXPECTED_ERROR.format(error=str(e)))
 
     return data_dict  # Devuelve el diccionario sin cambios en caso de error

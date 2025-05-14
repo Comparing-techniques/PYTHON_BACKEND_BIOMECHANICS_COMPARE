@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+
 from sklearn.preprocessing import MinMaxScaler
 from scipy.spatial.transform import Rotation as R
 
@@ -166,6 +167,7 @@ def quaternion_to_euler(q):
         return {"sagital": euler[0], "frontal": euler[1], "transversal": euler[2]}
     except Exception:
         return {"sagital": 0.0, "frontal": 0.0, "transversal": 0.0}
+    
 
 def crear_dataframes_movimientos(user_dict, rangos_dict, debug=False):
     """

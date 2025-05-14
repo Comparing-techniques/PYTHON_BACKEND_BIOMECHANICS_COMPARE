@@ -1,10 +1,10 @@
 import logging
 
-# Configura el logger
+# Configuración del logger
 logger = logging.getLogger("debugger")
-logger.setLevel(logging.DEBUG)  # Puedes cambiar a WARNING para desactivarlo
+logger.setLevel(logging.DEBUG)
 
-# Handler rápido a consola (solo una vez)
+# Handler rápido a consola
 if not logger.handlers:
     ch = logging.StreamHandler()
     ch.setLevel(logging.DEBUG)

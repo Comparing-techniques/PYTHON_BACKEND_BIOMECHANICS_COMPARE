@@ -1,4 +1,14 @@
 import numpy as np
+from ..handlers.logger import logger
+from ..utils.errors_aling_movements import (
+    JOINT_NOT_FOUND_IN_BOTH_USERS,
+    JOINT_SELECTION_OUT_OF_RANGE,
+    JOINT_SELECTION_INVALID_INPUT,
+    MOVEMENT_START_NOT_DETECTED,
+    SELECTED_JOINT_LOG,
+    SYNCED_FRAMES_LOG,
+)
+
 
 def seleccionar_articulacion_dict(user_dict, opcion: int):
     joint_names = list(user_dict["data"].keys())
@@ -8,9 +18,10 @@ def seleccionar_articulacion_dict(user_dict, opcion: int):
             if 0 <= opcion < len(joint_names):
                 return joint_names[opcion]
             else:
-                print("Número fuera de rango. Intenta de nuevo.")
+                logger.warning(JOINT_SELECTION_OUT_OF_RANGE)
         except ValueError:
-            print("Entrada inválida. Ingresa un número válido.")
+            logger.error(JOINT_SELECTION_INVALID_INPUT)
+            
 
 def calcular_umbral_movimiento_dict(datos, method="posicion", factor=3):
     posiciones = np.column_stack([datos["x"], datos["y"], datos["z"]])
@@ -30,6 +41,7 @@ def detectar_inicio_movimiento_dict(datos, umbral):
 
     return frames_supera_umbral[0] if len(frames_supera_umbral) > 0 else None
 
+
 def recortar_dict(user_dict, frame_inicio):
     recortado = {"data": {}, "info": {}}
     for key, array in user_dict["info"].items():
@@ -37,6 +49,7 @@ def recortar_dict(user_dict, frame_inicio):
     for joint, datos in user_dict["data"].items():
         recortado["data"][joint] = {k: v[frame_inicio:] if v is not None else None for k, v in datos.items()}
     return recortado
+
 
 def igualar_longitud_dicts(user1_dict, user2_dict):
     n_frames1 = len(user1_dict["info"]["frames"])
@@ -54,10 +67,14 @@ def igualar_longitud_dicts(user1_dict, user2_dict):
 
     return cortar(user1_dict), cortar(user2_dict)
 
-def sync_two_users_dict(user_dict1, user_dict2, joint_id):
 
+def sync_two_users_dict(user_dict1, user_dict2, joint_id):
+    """
+    Sincroniza los diccionarios de dos usuarios a partir de una articulación común y recorta el movimiento desde su inicio.
+    """
+    
     articulacion = seleccionar_articulacion_dict(user_dict1, joint_id)
-    print(f"Has seleccionado: {articulacion}")
+    logger.info(SELECTED_JOINT_LOG.format(articulacion))
 
     if articulacion in user_dict1["data"] and articulacion in user_dict2["data"]:
         umbral1 = calcular_umbral_movimiento_dict(user_dict1["data"][articulacion])
@@ -71,19 +88,34 @@ def sync_two_users_dict(user_dict1, user_dict2, joint_id):
             dict2_recortado = recortar_dict(user_dict2, inicio2)
             dict1_final, dict2_final = igualar_longitud_dicts(dict1_recortado, dict2_recortado)
 
-            print(f"Frames finales (user_one): {len(dict1_final['info']['frames'])}")
-            print(f"Inicio (ms): {dict1_final['info']['ms'][0]}, Fin (ms): {dict1_final['info']['ms'][-1]}")
+            # print(f"Frames finales (user_one): {len(dict1_final['info']['frames'])}")
+            # print(f"Inicio (ms): {dict1_final['info']['ms'][0]}, Fin (ms): {dict1_final['info']['ms'][-1]}")
 
-            print(f"Frames finales (user_two): {len(dict2_final['info']['frames'])}")
-            print(f"Inicio (ms): {dict2_final['info']['ms'][0]}, Fin (ms): {dict2_final['info']['ms'][-1]}")
+            # print(f"Frames finales (user_two): {len(dict2_final['info']['frames'])}")
+            # print(f"Inicio (ms): {dict2_final['info']['ms'][0]}, Fin (ms): {dict2_final['info']['ms'][-1]}")
+            
+            logger.info(SYNCED_FRAMES_LOG.format(
+                "user_one", 
+                len(dict1_final['info']['frames']),
+                dict1_final['info']['ms'][0],
+                dict1_final['info']['ms'][-1]
+            ))
+
+            logger.info(SYNCED_FRAMES_LOG.format(
+                "user_two", 
+                len(dict2_final['info']['frames']),
+                dict2_final['info']['ms'][0],
+                dict2_final['info']['ms'][-1]
+            ))
 
             return dict1_final, dict2_final
         else:
-            print("No se detectó un inicio claro del movimiento.")
+            logger.warning(MOVEMENT_START_NOT_DETECTED)
             return None, None
     else:
-        print(f"La articulación '{articulacion}' no está en ambos diccionarios.")
+        logger.error(JOINT_NOT_FOUND_IN_BOTH_USERS.format(articulacion))
         return None, None
+    
 
 def alinear_usuarios_procrustes(user1_dict, user2_dict):
     """

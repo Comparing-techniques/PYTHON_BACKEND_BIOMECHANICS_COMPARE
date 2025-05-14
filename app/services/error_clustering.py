@@ -1,9 +1,12 @@
-from sklearn.cluster import KMeans
 import numpy as np
 import pandas as pd
+
+from sklearn.cluster import KMeans
 from collections import Counter
 from sklearn.cluster import MiniBatchKMeans
+from sklearn.preprocessing import MinMaxScaler
 from scipy.spatial.transform import Rotation
+
  
 # Estimación de clusters por la desviación estándar
 def estimar_k_por_std(X, max_clusters=5, threshold_std=0.01):
@@ -12,6 +15,7 @@ def estimar_k_por_std(X, max_clusters=5, threshold_std=0.01):
         return 1  # Si el error es bajo, usamos un solo cluster
     else:
         return min(max_clusters, max(2, int(std_error * 1000)))  # Calculamos el número de clusters basado en el error
+
 
 def etiquetar_clusters_fijo(df, col_cluster="cluster"):
     etiquetas = {}
@@ -33,6 +37,7 @@ def etiquetar_clusters_fijo(df, col_cluster="cluster"):
             etiquetas[cluster] = "desconocido"  # Para clusters que no estén en el rango esperado
 
     return etiquetas
+
 
 # Función principal de clustering
 def agregar_clusters_por_error(dic_diferencias, max_clusters=5, random_state=42, std_threshold=0.01):
@@ -81,8 +86,6 @@ def agregar_clusters_por_error(dic_diferencias, max_clusters=5, random_state=42,
         dic_clusterizado[articulacion] = df_clusterizado
 
     return dic_clusterizado
-
-
 
 
 def agrupar_por_ventanas_ms(dic_clusterizado, duracion_ventana_ms=10):
@@ -144,6 +147,7 @@ def agrupar_por_ventanas_ms(dic_clusterizado, duracion_ventana_ms=10):
 
     return resultados_ventanas
 
+
 def quaternion_to_euler_difs(q):
     if q is None or len(q) != 4 or np.any(np.isnan(q)) or np.linalg.norm(q) < 1e-6:
         q = np.array([0, 0, 0, 1])
@@ -154,7 +158,6 @@ def quaternion_to_euler_difs(q):
     except Exception:
         return np.array([0.0, 0.0, 0.0])
 
-from sklearn.preprocessing import MinMaxScaler
 
 def generar_diccionario_diferencias_angulares(dic_novato, dic_experto):
     dic_diferencias_angulares = {}
@@ -231,6 +234,7 @@ def generar_diccionario_diferencias_angulares(dic_novato, dic_experto):
 
     return dic_diferencias_angulares
 
+
 def etiquetar_por_ventanas_fijas(dic_clusterizado, ventana_ms=1):
     etiquetas_interes = ['muy malo', 'malo', 'regular', 'bueno', 'muy bueno']
 
@@ -263,9 +267,6 @@ def etiquetar_por_ventanas_fijas(dic_clusterizado, ventana_ms=1):
 
             t_actual = t_final
 
-import numpy as np
-import pandas as pd
-from sklearn.cluster import MiniBatchKMeans
 
 # Estimación del número de clusters basado en la desviación estándar
 def estimar_k_angular_por_std(X, max_clusters=5, threshold_std=0.25):
@@ -279,6 +280,7 @@ def estimar_k_angular_por_std(X, max_clusters=5, threshold_std=0.25):
         n_clusters = min(max_clusters, max(2, int(std_error * 50)))
         #print(f"Se estiman {n_clusters} clusters basado en la desviación estándar.")
         return n_clusters
+
 
 # Etiquetar los clusters según el error angular con umbral global
 def etiquetar_clusters_angular_v4(df, col_error="error", col_cluster="cluster", umbral_error=0.05, umbral_error_global=0.15):
@@ -311,6 +313,7 @@ def etiquetar_clusters_angular_v4(df, col_error="error", col_cluster="cluster", 
             etiquetas[cluster] = 'bueno'
 
     return etiquetas
+
 
 # Clustering y etiquetado por articulación
 def agregar_clusters_por_error_angular_v2(dic_diferencias_angulares, max_clusters=5, std_threshold=0.02, random_state=42):

@@ -1,11 +1,11 @@
 from fastapi import UploadFile
 
-from app.services.AccelerationSpeed import generate_window_feedback, pipeline_compare_users
-from app.services.AlignMovements import alinear_usuarios_procrustes, sync_two_users_dict
-from app.services.CalculateErrors import crear_dataframes_movimientos, generar_diccionario_diferencias, generar_diccionario_diferencias_angulares, rangos_movimientos_con_signos
-from app.services.ErrorClustering import agregar_clusters_por_error, agregar_clusters_por_error_angular_v2, agrupar_por_ventanas_ms, etiquetar_por_ventanas_fijas
-from app.services.JointCentersAngles import convertir_a_dict_articulaciones, create_dict_with_data
-from .ProcessingFiles import add_data_to_dict, load_excel_file, create_tuple_names_list, creating_marker_dict  # Replace 'some_module' with the actual module name where the function is defined.
+from app.services.acceleration_speed import generate_window_feedback, pipeline_compare_users
+from app.services.align_movements import alinear_usuarios_procrustes, sync_two_users_dict
+from app.services.calculate_errors import crear_dataframes_movimientos, generar_diccionario_diferencias, generar_diccionario_diferencias_angulares, rangos_movimientos_con_signos
+from app.services.error_clustering import agregar_clusters_por_error, agregar_clusters_por_error_angular_v2, agrupar_por_ventanas_ms, etiquetar_por_ventanas_fijas
+from app.services.joint_centers_angles import convertir_a_dict_articulaciones, create_dict_with_data
+from .processing_files import add_data_to_dict, load_excel_file, create_tuple_names_list, creating_marker_dict
 
 
 async def execute_comparison(base_file: UploadFile, compare_file: UploadFile, joint_id: str):

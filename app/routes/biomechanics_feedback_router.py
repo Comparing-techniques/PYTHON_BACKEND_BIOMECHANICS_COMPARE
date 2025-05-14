@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
-from ..handlers.Logger import logger
-from ..models.RequestModel import RequestModel
-from ..controllers.BiomechanicsFeedback import biomechanics_feedback_controller
+from ..handlers.logger import logger
+from ..models.request_model import RequestModel
+from ..controllers.biomechanics_feedback import biomechanics_feedback_controller
 
 
 router = APIRouter(prefix="/feedback", tags=["BiomechanicsFeedback"])
