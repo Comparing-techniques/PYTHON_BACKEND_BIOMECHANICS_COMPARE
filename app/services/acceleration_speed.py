@@ -151,6 +151,21 @@ def compute_window_metrics(kin_ref: dict, kin_cmp: dict, window_ms: int = 10) ->
     return results
 
 
+def feedback_window_metrics_acel_vel(acel_vel_dict: dict) -> dict:
+    """
+    Dado un diccionario de DataFrames por articulación, agrega una columna de retroalimentación a cada DataFrame.
+    Retorna un diccionario de articulación -> DataFrame con la columna de retroalimentación agregada.
+    """
+    feedback_acel_vel_dict = {}
+    for joint in acel_vel_dict:
+        df_feedback = generate_window_feedback(acel_vel_dict[joint])
+        for idx, texto in df_feedback['feedback'].items():
+            if feedback_acel_vel_dict.get(joint) is None:
+                feedback_acel_vel_dict[joint] = " - " + texto
+            else:
+                feedback_acel_vel_dict[joint] += " - " + texto
+    return feedback_acel_vel_dict
+
 def pipeline_compare_users(user_ref: dict, user_cmp: dict, window_ms: int = 10) -> dict:
     """
     Full pipeline: compute kinematics for both users, then windowed comparison metrics.
@@ -169,6 +184,11 @@ def generate_window_feedback(df: pd.DataFrame) -> pd.DataFrame:
       - si la aceleración media fue mayor o menor que el modelo
       - si el jerk medio indica movimiento brusco
       - si hubo más cambios de dirección que el modelo
+
+        VM: Velocidad media
+        AM: Aceleración media
+        MB: Movimiento brusco
+        MS: Movimiento suave
     """
     feedbacks = []
 
@@ -179,35 +199,35 @@ def generate_window_feedback(df: pd.DataFrame) -> pd.DataFrame:
 
         v_diff = row['vel_media_diff_pct']
         if v_diff > 5:
-            v_msg = f"Velocidad media un {v_diff:.1f}% mayor que el modelo"
+            v_msg = f"VM {v_diff:.1f}% mayor"
         elif v_diff < -5:
-            v_msg = f"Velocidad media un {abs(v_diff):.1f}% menor que el modelo"
+            v_msg = f"VM {abs(v_diff):.1f}% menor"
         else:
-            v_msg = "Velocidad media similar al modelo"
+            v_msg = "VM similar"
 
         a_diff = row['acel_media_diff_pct']
         if a_diff > 10:
-            a_msg = f"Aceleración media un {a_diff:.1f}% mayor que el modelo"
+            a_msg = f"AM {a_diff:.1f}% mayor"
         elif a_diff < -10:
-            a_msg = f"Aceleración media un {abs(a_diff):.1f}% menor que el modelo"
+            a_msg = f"AM {abs(a_diff):.1f}% menor"
         else:
-            a_msg = "Aceleración media dentro de rango aceptable"
+            a_msg = "AM aceptable"
 
         j_diff = row['jerk_medio_diff_pct']
         if j_diff > 10:
-            j_msg = "Movimiento brusco (jerk alto) respecto al modelo"
+            j_msg = "MB (jerk alto) respecto al modelo"
         else:
-            j_msg = "Movimiento relativamente suave"
+            j_msg = "MS"
 
-        c_diff = row['cambios_direccion_diff']
-        if c_diff > 0:
-            c_msg = f"{c_diff} cambios de dirección más que el modelo"
-        elif c_diff < 0:
-            c_msg = f"{abs(c_diff)} cambios de dirección menos que el modelo"
-        else:
-            c_msg = "Igual número de cambios de dirección que el modelo"
+        # c_diff = row['cambios_direccion_diff']
+        # if c_diff > 0:
+        #     c_msg = f"{c_diff} cambios de dirección más"
+        # elif c_diff < 0:
+        #     c_msg = f"{abs(c_diff)} cambios de dirección menos"
+        # else:
+        #     c_msg = "Igual número de cambios de dirección"
 
-        msg = f"Ventana {inicio:.2f}–{fin:.2f} ms ({n} frames): " + "; ".join([v_msg, a_msg, j_msg, c_msg]) + "."
+        msg = f"Ventana {inicio:.2f}–{fin:.2f} s " + "; ".join([v_msg, a_msg, j_msg]) + "."
         feedbacks.append(msg)
 
     df_with_feedback = df.copy()

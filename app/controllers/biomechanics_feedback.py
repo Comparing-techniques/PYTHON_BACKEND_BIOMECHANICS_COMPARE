@@ -13,11 +13,4 @@ async def biomechanics_feedback_controller(request: request_model):
     # For now, let's just return a simple message
     base_name = request.base_excel_file.filename
     cmp_name  = request.excel_file_compare.filename
-    
-    await execute_comparison(request.base_excel_file, request.excel_file_compare, request.joint_id)
-    return {
-        "message": "Biomechanics feedback request received",
-        "base_excel_file": base_name,
-        "excel_file_compare": cmp_name,
-        "joint_id": request.joint_id
-    }
+    return await execute_comparison(request.base_excel_file, request.excel_file_compare, request.joint_id)
