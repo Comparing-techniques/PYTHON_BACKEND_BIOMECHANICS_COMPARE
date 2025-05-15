@@ -97,8 +97,13 @@ def agrupar_por_ventanas_ms(dic_clusterizado, duracion_ventana_ms=10):
     :return: Diccionario con los resultados agrupados por ventana.
     """
     resultados_ventanas = {}
-
+    resultados_ventana_posicion = {}
+    etiquetas_interes = ['muy malo', 'malo', 'regular', 'bueno', 'muy bueno']
+    print("Resultados posicion por ventana:")
     for articulacion, df in dic_clusterizado.items():
+        resultados_ventana_posicion[articulacion] = []
+        print(f"\n📌 Articulación: {articulacion}")
+
         df = df.sort_values("ms").reset_index(drop=True)
         resultados_ventanas[articulacion] = []
 
@@ -106,7 +111,6 @@ def agrupar_por_ventanas_ms(dic_clusterizado, duracion_ventana_ms=10):
         ms_final_total = df["ms"].max()
 
         ms_actual = ms_inicio_total
-
         while ms_actual < ms_final_total:
             ms_limite = ms_actual + duracion_ventana_ms
             ventana = df[(df["ms"] >= ms_actual) & (df["ms"] < ms_limite)]
@@ -129,23 +133,19 @@ def agrupar_por_ventanas_ms(dic_clusterizado, duracion_ventana_ms=10):
                 "ms_final": ms_final,
                 "etiqueta": etiqueta_mas_comun,
                 "error_promedio": error_promedio,
-                "frame_inicial": frames_inicial,
-                "frame_final": frames_final,
-                "duracion_ms": duracion_ms
             })
 
             ms_actual = ms_limite
 
-        # Mostrar resultados por articulación
-        print(f"\nResultados para la articulación: {articulacion}")
-        for ventana in resultados_ventanas[articulacion]:
-            print(f"Ventana de frames: {ventana['frame_inicial']} a {ventana['frame_final']}")
-            print(f"Etiqueta más repetida: {ventana['etiqueta']}")
-            print(f"Error promedio: {ventana['error_promedio']:.2e}")
-            print(f"Rango de tiempo: {ventana['ms_inicio']}ms a {ventana['ms_final']}ms")
-            print(f"Duración de la ventana: {ventana['duracion_ms']}ms\n")
+            if etiqueta_mas_comun in etiquetas_interes:
+                print(f"🟢 {etiqueta_mas_comun.upper():<10} | {int(ms_inicio)} s → {int(ms_final)} s")
+                resultados_ventana_posicion[articulacion].append({
+                    "label": etiqueta_mas_comun.upper(),
+                    "s_inicio": int(ms_inicio),
+                    "s_final": int(ms_final),
+                })
 
-    return resultados_ventanas
+    return resultados_ventana_posicion
 
 
 def quaternion_to_euler_difs(q):
@@ -236,9 +236,12 @@ def generar_diccionario_diferencias_angulares(dic_novato, dic_experto):
 
 
 def etiquetar_por_ventanas_fijas(dic_clusterizado, ventana_ms=1):
+    resultados_ventana_angular = {}
     etiquetas_interes = ['muy malo', 'malo', 'regular', 'bueno', 'muy bueno']
+    print("Resultado angular por ventana:")
 
     for articulacion, df in dic_clusterizado.items():
+        resultados_ventana_angular[articulacion] = []
         print(f"\n📌 Articulación: {articulacion}")
         if df.empty:
             print("  ⚠️  DataFrame vacío.")
@@ -257,16 +260,21 @@ def etiquetar_por_ventanas_fijas(dic_clusterizado, ventana_ms=1):
             if ventana_df.empty:
                 t_actual = t_final
                 continue
-
+            
             # Contar etiquetas y elegir la más frecuente
             etiquetas = ventana_df["etiqueta"].dropna().tolist()
             if etiquetas:
                 etiqueta_dominante = Counter(etiquetas).most_common(1)[0][0]
                 if etiqueta_dominante in etiquetas_interes:
                     print(f"🟢 {etiqueta_dominante.upper():<10} | {int(t_actual)} s → {int(t_final)} s")
+                    resultados_ventana_angular[articulacion].append({
+                    "label": etiqueta_dominante.upper(),
+                    "s_inicio": int(t_actual),
+                    "s_final": int(t_final),
+                    })
 
             t_actual = t_final
-
+    return resultados_ventana_angular
 
 # Estimación del número de clusters basado en la desviación estándar
 def estimar_k_angular_por_std(X, max_clusters=5, threshold_std=0.25):
