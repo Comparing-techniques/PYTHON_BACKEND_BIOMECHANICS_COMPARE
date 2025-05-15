@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends
-from ..handlers.logger import logger
 from ..models.request_model import RequestModel
 from ..controllers.biomechanics_feedback import biomechanics_feedback_controller
 

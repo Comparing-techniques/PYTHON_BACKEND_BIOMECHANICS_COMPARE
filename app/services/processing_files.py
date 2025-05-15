@@ -3,7 +3,7 @@ import pandas as pd
 
 from collections import Counter
 from fastapi import UploadFile
-from ..handlers.logger import logger
+from ..handlers.Logger import logger
 from io import BytesIO
 from ..utils.errors_processing_files import (
     ADD_DATA_TO_DICT_UNEXPECTED_ERROR,

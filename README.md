@@ -42,5 +42,5 @@ pip install -r requirements.txt
 
 Once the dependencies are installed, start the development server with:
 ```bash
-- uvicorn app.main:app_principal  --reload 
+uvicorn app.main:app_principal  --reload 
 ```

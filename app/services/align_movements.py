@@ -1,5 +1,5 @@
 import numpy as np
-from ..handlers.logger import logger
+from ..handlers.Logger import logger
 from ..utils.errors_aling_movements import (
     JOINT_NOT_FOUND_IN_BOTH_USERS,
     JOINT_SELECTION_OUT_OF_RANGE,
