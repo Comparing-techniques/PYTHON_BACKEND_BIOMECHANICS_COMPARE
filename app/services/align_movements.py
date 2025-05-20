@@ -67,6 +67,22 @@ def igualar_longitud_dicts(user1_dict, user2_dict):
 
     return cortar(user1_dict), cortar(user2_dict)
 
+def convertir_numpy_a_listas(dic):
+    def convertir_valor(v):
+        if isinstance(v, np.ndarray):
+            return v.tolist()
+        return v  # si ya es lista, None, o cualquier otro tipo compatible
+
+    return {
+        "info": {k: convertir_valor(v) for k, v in dic["info"].items()},
+        "data": {
+            articulacion: {
+                k: convertir_valor(v) for k, v in datos.items()
+            }
+            for articulacion, datos in dic["data"].items()
+        }
+    }
+
 
 def sync_two_users_dict(user_dict1, user_dict2, joint_id):
     """
