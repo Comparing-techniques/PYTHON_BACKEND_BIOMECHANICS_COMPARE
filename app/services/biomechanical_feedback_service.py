@@ -1,7 +1,7 @@
 from fastapi import HTTPException, UploadFile
 
 from app.services.acceleration_speed import generate_window_feedback, pipeline_compare_users, feedback_window_metrics_acel_vel
-from app.services.align_movements import alinear_usuarios_procrustes, sync_two_users_dict
+from app.services.align_movements import alinear_usuarios_procrustes, sync_two_users_dict, convertir_numpy_a_listas
 from app.services.calculate_errors import crear_dataframes_movimientos, generar_diccionario_diferencias, generar_diccionario_diferencias_angulares, rangos_movimientos_con_signos
 from app.services.error_clustering import agregar_clusters_por_error, agregar_clusters_por_error_angular_v2, agrupar_por_ventanas_ms, etiquetar_por_ventanas_fijas
 from app.services.feedback_builder import transform_dict_pos_ang_to_text, transform_dict_vel_acel_to_text, get_feedback_from_type_data_external_IA
@@ -51,9 +51,8 @@ async def execute_comparison(base_file: UploadFile, compare_file: UploadFile, jo
         feedback_angular_external = await get_feedback_from_type_data_external_IA(text_angular_to_ia, "angular")
         feedback_acel_vel_external = await get_feedback_from_type_data_external_IA(text_vel_ac_to_ia, "acel_vel")
 
-        print("Feedback de posición:", feedback_position_external)
-        print("Feedback angular:", feedback_angular_external)
-        print("Feedback de aceleración y velocidad:", feedback_acel_vel_external)
+        user_one_full_to_response = convertir_numpy_a_listas(user_one_to_model)
+        user_two_full_to_response = convertir_numpy_a_listas(user_two_to_model)
 
         response = {
             "feedback_position": feedback_position_external,
@@ -61,7 +60,9 @@ async def execute_comparison(base_file: UploadFile, compare_file: UploadFile, jo
             "feedback_acel_vel": feedback_acel_vel_external,
             "values_position": resultados_ventanas_joints,
             "values_angular": resultados_ventanas_angles,
-            "values_acel_vel": feedback_acel_vel_dict
+            "values_acel_vel": feedback_acel_vel_dict,
+            "data_full_user_one": user_one_full_to_response,
+            "data_full_user_two": user_two_full_to_response,
         }
 
         return response
