@@ -57,15 +57,104 @@ async def get_feedback_from_type_data_external_IA(message, type) -> str:
     """
     # Aquí se implementaría la lógica para enviar los datos a un servicio externo de IA
     # y recibir la respuesta. Por ahora, solo se devuelve el mensaje original.
+    # Promt de posicion: A continuación necesito un feedback de patrones biomecanicos (posiciones de articulaciones) donde el resultado lo vas a armar por cadenas de movimiento (como brazo, cuello, pierna, etc) te pasare las articulaciones con datos  donde  tendrás segundos iniciales, finales y la calificación de ventanas de tiempo del movimiento. ponlo en palabras sencillas y poco tecnicas; no hagas una introducción o una pregunta donde sugieras algún otro mensaje, esta respuesta ira conectada a una API y no debe notarse que una IA externa responde, no me des recomendaciones sobre enviarte otro mensaje de ningún tipo, tampoco un resumen general, si quieres sugerir mejoras que se enfoquen en como mejorar el movimiento del sujeto 2 en comparación del 1, pero hasta ahí, que la persona que lea no sienta que lo hizo un humano o robot, que solo sea el texto: , no debe ser muy largo
+    # Promt de angular: "A continuación necesito un feedback de patrones biomecanicos (angulos de las articulaciones) donde el resultado lo vas a armar por cadenas de movimiento (como brazo, cuello, pierna, etc) te pasare las articulaciones con datos  donde  tendrás segundos iniciales, finales y la calificación de ventanas de tiempo del movimiento. ponlo en palabras sencillas y poco tecnicas; no hagas una introducción o una pregunta donde sugieras algún otro mensaje, esta respuesta ira conectada a una API y no debe notarse que una IA externa responde, no me des recomendaciones sobre enviarte otro mensaje de ningún tipo, tampoco un resumen general, si quieres sugerir mejoras que se enfoquen en como mejorar el movimiento del sujeto 2 en comparación del 1, pero hasta ahí, que la persona que lea no sienta que lo hizo un humano o robot, que solo sea el texto: , no debe ser muy largo"
+    # Promt de acel vel: "A continuación necesito un feedback de patrones biomecanicos (aceleracion y velocidad) donde el resultado lo vas a armar por cadenas de movimiento (como brazo, cuello, pierna, etc) te pasare las articulaciones con datos  donde       VM: Velocidad media AM: Aceleración media MB: Movimiento brusco MS: Movimiento suave; que nacen de comparar el movimiento de un sujeto 2 a comparacion de otro, ponlo en palabras sencillas y poco tecnicas; no hagas una introducción o una pregunta donde sugieras algún otro mensaje, esta respuesta ira conectada a una API y no debe notarse que una IA externa responde, no me des recomendaciones sobre enviarte otro mensaje de ningún tipo, tampoco un resumen general, si quieres sugerir mejoras que se enfoquen en como mejorar el movimiento del sujeto 2 en comparación del 1, pero hasta ahí, que la persona que lea no sienta que lo hizo un humano o robot, que solo sea el texto: , no debe ser muy largo"
     try:
         instruction = ""
         if type == "position":
-            instruction = "a continuacion necesito un feedback de patrones biomecanicos (posiciones de articulaciones) donde el resultado lo vas a armar por cadenas de movimiento (como brazo, cuello, pierna, etc) te pasare las articulaciones con datos  donde  tendrás segundos iniciales, finales y la calificación de ventanas de tiempo del movimiento. ponlo en palabras sencillas y poco tecnicas; no hagas una introducción o una pregunta donde sugieras algún otro mensaje, esta respuesta ira conectada a una API y no debe notarse que una IA externa responde, no me des recomendaciones sobre enviarte otro mensaje de ningún tipo, tampoco un resumen general, si quieres sugerir mejoras que se enfoquen en como mejorar el movimiento del sujeto 2 en comparación del 1, pero hasta ahí, que la persona que lea no sienta que lo hizo un humano o robot, que solo sea el texto: , no debe ser muy largo"
+            instruction = """
+                A continuación necesito un feedback de patrones biomecánicos enfocado hacia posiciones de articulaciones donde el resultado lo vas a armar por cadenas de movimiento funcional (como brazo, cuello, pierna, etc). Te pasaré las articulaciones con datos, donde tendrás segundos iniciales, finales y la calificación de ventanas de tiempo del movimiento.
 
+                Ponlo en palabras sencillas y poco técnicas. No hagas una introducción ni una pregunta, no sugieras enviar ningún otro mensaje. Esta respuesta irá conectada a una API, por lo tanto no debe notarse que la escribe una IA externa ni un humano. No uses saludos ni cierres, solo el texto.
+
+                Utiliza exactamente la siguiente estructura de secciones. Cada sección debe iniciar con su título en el formato "**[Título]:**", seguido por una o más frases descriptivas:
+
+                **Cabeza y Cuello:**
+                [Texto sobre articulaciones del cuello y cabeza]
+
+                **Tronco:**
+                [Texto sobre columna torácica, lumbar y sacroilíaca]
+
+                **Brazo y Hombro Izquierdo:**
+                [Texto sobre hombro izquierdo, codo izquierdo y muñeca izquierda]
+
+                **Brazo y Hombro Derecho:**
+                [Texto sobre hombro derecho, codo derecho y muñeca derecha]
+
+                **Caderas y Piernas:**
+                [Texto sobre caderas, rodillas y fémur]
+
+                **Tobillos y Pies:**
+                [Texto sobre tobillos, pies y estructuras relacionadas]
+
+                **Recomendaciones Generales:**
+                [Texto con sugerencias puntuales sobre cómo mejorar el movimiento del sujeto 2 comparado con el 1]
+
+                Mantén esta estructura en todos los casos. No omitas ninguna sección, aunque el contenido de alguna sea breve. El análisis no debe ser muy largo, pero sí claro y especifico.
+                """
         elif type == "angular":
-            instruction = "a continuacion necesito un feedback de patrones biomecanicos (angulos de las articulaciones) donde el resultado lo vas a armar por cadenas de movimiento (como brazo, cuello, pierna, etc) te pasare las articulaciones con datos  donde  tendrás segundos iniciales, finales y la calificación de ventanas de tiempo del movimiento. ponlo en palabras sencillas y poco tecnicas; no hagas una introducción o una pregunta donde sugieras algún otro mensaje, esta respuesta ira conectada a una API y no debe notarse que una IA externa responde, no me des recomendaciones sobre enviarte otro mensaje de ningún tipo, tampoco un resumen general, si quieres sugerir mejoras que se enfoquen en como mejorar el movimiento del sujeto 2 en comparación del 1, pero hasta ahí, que la persona que lea no sienta que lo hizo un humano o robot, que solo sea el texto: , no debe ser muy largo"
+            instruction = """
+                A continuación necesito un feedback de patrones biomecanicos enfocado hacia angulos de las articulaciones donde el resultado lo vas a armar por cadenas de movimiento (como brazo, cuello, pierna, etc). Te pasaré las articulaciones con datos, donde tendrás segundos iniciales, finales y la calificación de ventanas de tiempo del movimiento.
+
+                Ponlo en palabras sencillas y poco técnicas. No hagas una introducción ni una pregunta, no sugieras enviar ningún otro mensaje. Esta respuesta irá conectada a una API, por lo tanto no debe notarse que la escribe una IA externa ni un humano. No uses saludos ni cierres, solo el texto.
+
+                Utiliza exactamente la siguiente estructura de secciones. Cada sección debe iniciar con su título en el formato "**[Título]:**", seguido por una o más frases descriptivas:
+
+                **Cabeza y Cuello:**
+                [Texto sobre articulaciones del cuello y cabeza]
+
+                **Tronco:**
+                [Texto sobre columna torácica, lumbar y sacroilíaca]
+
+                **Brazo y Hombro Izquierdo:**
+                [Texto sobre hombro izquierdo, codo izquierdo y muñeca izquierda]
+
+                **Brazo y Hombro Derecho:**
+                [Texto sobre hombro derecho, codo derecho y muñeca derecha]
+
+                **Caderas y Piernas:**
+                [Texto sobre caderas, rodillas y fémur]
+
+                **Tobillos y Pies:**
+                [Texto sobre tobillos, pies y estructuras relacionadas]
+
+                **Recomendaciones Generales:**
+                [Texto con sugerencias puntuales sobre cómo mejorar el movimiento del sujeto 2 comparado con el 1 en cuestion de angulos de las articulaciones]
+
+                Mantén esta estructura en todos los casos. No omitas ninguna sección, aunque el contenido de alguna sea breve. El análisis no debe ser muy largo, pero sí claro y especifico.
+                """
         elif type == "acel_vel":
-            instruction = "a continuacion necesito un feedback de patrones biomecanicos (aceleracion y velocidad) donde el resultado lo vas a armar por cadenas de movimiento (como brazo, cuello, pierna, etc) te pasare las articulaciones con datos  donde       VM: Velocidad media AM: Aceleración media MB: Movimiento brusco MS: Movimiento suave; que nacen de comparar el movimiento de un sujeto 2 a comparacion de otro, ponlo en palabras sencillas y poco tecnicas; no hagas una introducción o una pregunta donde sugieras algún otro mensaje, esta respuesta ira conectada a una API y no debe notarse que una IA externa responde, no me des recomendaciones sobre enviarte otro mensaje de ningún tipo, tampoco un resumen general, si quieres sugerir mejoras que se enfoquen en como mejorar el movimiento del sujeto 2 en comparación del 1, pero hasta ahí, que la persona que lea no sienta que lo hizo un humano o robot, que solo sea el texto: , no debe ser muy largo"
+            instruction = """
+                A continuación necesito un feedback de patrones biomecanicos enfocado hacia aceleracion y velocidad del movimiento donde el resultado lo vas a armar por cadenas de movimiento (como brazo, cuello, pierna, etc). Te pasaré las articulaciones con datosA continuación necesito un feedback de patrones biomecanicos (aceleracion y velocidad) donde el resultado lo vas a armar por cadenas de movimiento (como brazo, cuello, pierna, etc) te pasare las articulaciones con datos  donde, VM: Velocidad media AM: Aceleración media MB: Movimiento brusco MS: Movimiento suave; que nacen de comparar el movimiento de un sujeto 2 a comparacion de otro
+
+                Ponlo en palabras sencillas y poco técnicas. No hagas una introducción ni una pregunta, no sugieras enviar ningún otro mensaje. Esta respuesta irá conectada a una API, por lo tanto no debe notarse que la escribe una IA externa ni un humano. No uses saludos ni cierres, solo el texto.
+
+                Utiliza exactamente la siguiente estructura de secciones. Cada sección debe iniciar con su título en el formato "**[Título]:**", seguido por una o más frases descriptivas:
+
+                **Cabeza y Cuello:**
+                [Texto sobre articulaciones del cuello y cabeza]
+
+                **Tronco:**
+                [Texto sobre columna torácica, lumbar y sacroilíaca]
+
+                **Brazo y Hombro Izquierdo:**
+                [Texto sobre hombro izquierdo, codo izquierdo y muñeca izquierda]
+
+                **Brazo y Hombro Derecho:**
+                [Texto sobre hombro derecho, codo derecho y muñeca derecha]
+
+                **Caderas y Piernas:**
+                [Texto sobre caderas, rodillas y fémur]
+
+                **Tobillos y Pies:**
+                [Texto sobre tobillos, pies y estructuras relacionadas]
+
+                **Recomendaciones Generales:**
+                [Texto con sugerencias puntuales sobre cómo mejorar el movimiento del sujeto 2 comparado con el 1 en cuestion de angulos de las articulaciones]
+
+                Mantén esta estructura en todos los casos. No omitas ninguna sección, aunque el contenido de alguna sea breve. El análisis no debe ser muy largo, pero sí claro y especifico.
+                """
         else:
             raise RuntimeError("Tipo de datos no soportado.")
         

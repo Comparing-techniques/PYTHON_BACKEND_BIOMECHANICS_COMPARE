@@ -58,6 +58,7 @@ async def execute_comparison(base_file: UploadFile, compare_file: UploadFile, jo
             "feedback_position": feedback_position_external,
             "feedback_angular": feedback_angular_external,
             "feedback_acel_vel": feedback_acel_vel_external,
+            
             "values_position": resultados_ventanas_joints,
             "values_angular": resultados_ventanas_angles,
             "values_acel_vel": feedback_acel_vel_dict,
