@@ -18,3 +18,7 @@ __pycache__/
 
 # Archivos de entorno
 .env
+
+
+pythonapi
+./pythonapi
