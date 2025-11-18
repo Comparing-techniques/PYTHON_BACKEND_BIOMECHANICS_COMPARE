@@ -8,7 +8,7 @@ env/
 # Archivos compilados de Python
 __pycache__/
 *.py[cod]
-
+./pythonapi
 # Archivos de configuración de editores
 .vscode/
 .idea/
